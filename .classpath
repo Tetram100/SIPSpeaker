@@ -2,14 +2,14 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="/home/tetram/Net Based/SIPSpeaker/lib/en_us.jar"/>
-	<classpathentry kind="lib" path="/home/tetram/Net Based/SIPSpeaker/lib/cmulex.jar"/>
-	<classpathentry kind="lib" path="/home/tetram/Net Based/SIPSpeaker/lib/cmutimelex.jar"/>
-	<classpathentry kind="lib" path="/home/tetram/Net Based/SIPSpeaker/lib/cmu_time_awb.jar"/>
-	<classpathentry kind="lib" path="/home/tetram/Net Based/SIPSpeaker/lib/freetts.jar"/>
-	<classpathentry kind="lib" path="/home/tetram/Net Based/SIPSpeaker/lib/cmu_us_kal.jar"/>
-	<classpathentry kind="lib" path="/home/tetram/Net Based/SIPSpeaker/lib/mbrola.jar"/>
-	<classpathentry kind="lib" path="/home/tetram/Net Based/SIPSpeaker/lib/freetts-jsapi10.jar"/>
-	<classpathentry kind="lib" path="/home/tetram/Net Based/SIPSpeaker/lib/cmudict04.jar"/>
+	<classpathentry kind="lib" path="/home/tom/Documents/SIP_Speaker/SIPSpeaker/lib/cmudict04.jar"/>
+	<classpathentry kind="lib" path="/home/tom/Documents/SIP_Speaker/SIPSpeaker/lib/cmulex.jar"/>
+	<classpathentry kind="lib" path="/home/tom/Documents/SIP_Speaker/SIPSpeaker/lib/cmu_time_awb.jar"/>
+	<classpathentry kind="lib" path="/home/tom/Documents/SIP_Speaker/SIPSpeaker/lib/cmutimelex.jar"/>
+	<classpathentry kind="lib" path="/home/tom/Documents/SIP_Speaker/SIPSpeaker/lib/cmu_us_kal.jar"/>
+	<classpathentry kind="lib" path="/home/tom/Documents/SIP_Speaker/SIPSpeaker/lib/en_us.jar"/>
+	<classpathentry kind="lib" path="/home/tom/Documents/SIP_Speaker/SIPSpeaker/lib/freetts.jar"/>
+	<classpathentry kind="lib" path="/home/tom/Documents/SIP_Speaker/SIPSpeaker/lib/freetts-jsapi10.jar"/>
+	<classpathentry kind="lib" path="/home/tom/Documents/SIP_Speaker/SIPSpeaker/lib/mbrola.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

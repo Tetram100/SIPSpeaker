@@ -7,6 +7,9 @@ public class Main {
 	public static void main(String[] args) {
 		Thread web_server = new ThreadWeb(default_message, web_port);
 		web_server.start();
+		
+		Thread sip_server = new ThreadSIPServer(40000);
+		sip_server.start();
 	}
 
 }
