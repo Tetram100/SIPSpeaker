@@ -16,58 +16,99 @@ public class ThreadSIPServer extends Thread {
 		try {
 			this.socket = new DatagramSocket(port);
 		} catch (IOException e) {
-			System.out.println("Error while launching the datagram socket: " + e);
+			System.out.println("Error while launching the datagram socket: "
+					+ e);
 			return;
 		}
 	}
 
 	public void run() {
 		while (true) {
-			
+
 			try {
 				byte[] buf = new byte[256];
 
 				// receive request
 				DatagramPacket packet = new DatagramPacket(buf, buf.length);
 				this.socket.receive(packet);
-				
+
 				String request = new String(packet.getData());
-				
-				String callID = "";
-				
-				
-				if(request.startsWith("INVITE")){
-					
-					System.out.println("INVITE INVITE INVITE");
-					String[] req = request.split("[ \n]");
+
+				//System.out.println(request);
+
+				if (request.startsWith("INVITE")) {
+
+					String[] req = request.split("\n");
+					String via = "";
+					String from = "";
+					String to = "";
+					String callID = "";
+					String numb = "";
+
+					for (String part : req) {
+						if (part.startsWith("Via")) {
+							via = part;
+						}
+
+						if (part.startsWith("From")) {
+							from = part;
+						}
+
+						if (part.startsWith("To")) {
+							to = part;
+						}
+					}
+
+					req = request.split("[ \n]");
 					int k = 0;
-					 for(String part : req)
-					 {
-						 if(part.equals("Call-ID:")){
-							callID = req[k+1];
-						 }
-						 k++;
-					 }
-					
-					String rep = new String("SIP/2.0 100 Trying\nCall-ID: "+ callID + "\nCseq: 1 INVITE\nContent-Length: 0");
-					System.out.println(rep);
-					
-					byte[] brep = rep.getBytes();
+					for (String part : req) {
+
+						if (part.equals("Call-ID:")) {
+							callID = req[k + 1];
+						}
+
+						if (part.equals("CSeq:")) {
+							numb = req[k + 1];
+						}
+						k++;
+					}
+
+					// write the 100 trying response and convert the response in
+					// byte[]
+					String trying = new String("SIP/2.0 100 Trying\n" + via
+							+ "\n" + from + "\n" + to + "\nCall-ID: " + callID
+							+ "\nCseq: " + numb + " INVITE"
+							+ "\nContent-Length: 0");
+					//System.out.println(trying);
+
+					byte[] btrying = trying.getBytes();
+
 					// send the response to the client at "address" and "port"
-			
 					InetAddress address = packet.getAddress();
 					int port = packet.getPort();
-					
-					System.out.println(address);
-					System.out.println(port);
-					packet = new DatagramPacket(brep, brep.length, address, port);
+
+					packet = new DatagramPacket(btrying, btrying.length,
+							address, port);
+					System.out.println(packet);
+					socket.send(packet);
+
+					// write the 200 OK response and convert the response in
+					// byte[]
+					String ok = new String("SIP/2.0 200 OK\n" + via + "\n"
+							+ from + "\n" + to + "\nCall-ID: " + callID
+							+ "\nCseq: " + numb + " INVITE"
+							+ "\nContent-Length: 0");
+					System.out.println(ok);
+
+					byte[] bok = ok.getBytes();
+
+					// send the response to the client at "address" and "port"
+					packet = new DatagramPacket(bok, bok.length, address, port);
 					socket.send(packet);
 				}
-					
-				
-				
+
 			} catch (IOException e) {
-				System.out.println("Error while receiving a packet: "+ e);
+				System.out.println("Error while receiving a packet: " + e);
 				return;
 			}
 		}
