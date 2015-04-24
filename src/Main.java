@@ -4,7 +4,7 @@ import java.util.Properties;
 
 public class Main {
 
-	public static int web_port = 8080;
+	public static int http_port = 8080;
 	public static int sip_port = 40000;
 	public static String sip_user = "sipspeaker";
 	public static String sip_interface = "127.0.0.1";
@@ -27,11 +27,24 @@ public class Main {
 					break;
 				case "-user":
 					String sip_uri = args[i+1];
-					//TODO interpret this String
+					sip_user = sip_uri.substring(0, sip_uri.indexOf("@"));
+					if (sip_uri.indexOf(":") == -1){
+						sip_interface = sip_uri.substring(sip_uri.indexOf("@")+1);
+					} else {
+						sip_interface = sip_uri.substring(sip_uri.indexOf("@")+1, sip_uri.indexOf(":"));
+						sip_port = Integer.parseInt(sip_uri.substring(sip_uri.indexOf(":")+1));
+					}
 					break;
 				case "-http":
 					String http_bind_address = args[i+1];
-					//TODO interpret this String
+					if (http_bind_address.indexOf(":") != -1){
+						http_interface = http_bind_address.substring(0, http_bind_address.indexOf(":"));
+						http_port = Integer.parseInt(http_bind_address.substring(http_bind_address.indexOf(":")+1));
+					} else if (http_bind_address.indexOf(".") != -1) {
+						http_interface = http_bind_address;
+					} else {
+						http_port = Integer.parseInt(http_bind_address);
+					}
 					break;
 				default:
 					System.out.println("No input from the command line interface, the default value will be used.");
@@ -48,7 +61,7 @@ public class Main {
 		//We write the default message
 		writeDefaultMessage(default_message);
 
-		Thread web_server = new ThreadWeb(default_message, message_location, web_port);
+		Thread web_server = new ThreadWeb(default_message, message_location, http_port);
 		web_server.start();
 
 		Thread sip_server = new ThreadSIPServer(sip_port, sip_interface);
@@ -62,7 +75,7 @@ public class Main {
 
 		prop.load(is);
 
-		web_port = Integer.parseInt(prop.getProperty("http_port").trim());
+		http_port = Integer.parseInt(prop.getProperty("http_port").trim());
 		sip_port = Integer.parseInt(prop.getProperty("sip_port").trim());
 		sip_user = prop.getProperty("sip_user");
 		sip_interface = prop.getProperty("sip_interface");
