@@ -10,21 +10,23 @@ public class ThreadSIPServer extends Thread {
 	public int port;
 	public String sAdd;
 	public InetAddress addr;
+	public String sipUser;
+	public String messageLocation;
 	
 	
 	public DatagramSocket socket = null;
 
-	public ThreadSIPServer(int port, String addrSIP) {
+	public ThreadSIPServer(int port, String addrSIP, String sipUser, String messageLocation) {
 		this.port = port;
-		
-		//TODO changer cette ligne et ajouter un paramètre au constructeur
-		this.sAdd = "192.168.0.101";
+		this.sipUser = sipUser;
+		this.messageLocation = messageLocation;
+		this.sAdd = addrSIP;
 
 		try {
 			addr = InetAddress.getByName(this.sAdd);
-		} catch (UnknownHostException e1) {
+		} catch (UnknownHostException e) {
 			System.out.println("Error while getting the datagram socket's address: "
-					+ e1);
+					+ e);
 			return;
 		}
 
@@ -43,7 +45,7 @@ public class ThreadSIPServer extends Thread {
 		while (true) {
 
 			try {
-				byte[] buf = new byte[256];
+				byte[] buf = new byte[1000];
 
 				// receive request
 				DatagramPacket packet = new DatagramPacket(buf, buf.length);
@@ -61,6 +63,7 @@ public class ThreadSIPServer extends Thread {
 					String to = "";
 					String callID = "";
 					String numb = "";
+					int port_dest = 0;
 
 					for (String part : req) {
 						if (part.startsWith("Via")) {
@@ -73,6 +76,10 @@ public class ThreadSIPServer extends Thread {
 
 						if (part.startsWith("To")) {
 							to = part;
+						}
+						
+						if (part.startsWith("m=")){
+							port_dest = Integer.parseInt(part.split(" ")[1]);
 						}
 					}
 
@@ -105,6 +112,7 @@ public class ThreadSIPServer extends Thread {
 
 					// send the response to the client at "address" and "port".
 					InetAddress address = packet.getAddress();
+					String stringAdd = address.getHostAddress() ;
 					int port = packet.getPort();
 
 					packet = new DatagramPacket(btrying, btrying.length,
@@ -156,6 +164,12 @@ public class ThreadSIPServer extends Thread {
 					// send the response to the client at "address" and "port"
 					packet = new DatagramPacket(bok, bok.length, address, port);
 					socket.send(packet);
+					
+					
+					SessionAudio session = new SessionAudio(20000, this.addr, port_dest, stringAdd, "/home/tom/Documents/SIP_Speaker/SIPSpeaker/message.wav");
+					session.sendFile();
+					
+					String bye = new String("");
 				}
 
 			} catch (IOException e) {
