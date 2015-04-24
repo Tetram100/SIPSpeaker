@@ -13,14 +13,14 @@ public class FreeTTS{
 		this.voiceMsg = message;
 	}
 
-	public String writeMessage() {
+	public String writeMessage(String message_location) {
 		try {
 			VoiceManager voiceManager = VoiceManager.getInstance();
 			Voice voice = voiceManager.getVoice(voiceName);
 			voice.setStyle("casual"); //Voice style "business", "casual", "robotic", "breathy"
 			voice.allocate();            
 			SingleFileAudioPlayer audioPlayer = new SingleFileAudioPlayer(
-					fileLocation, Type.WAVE);     //To Create the wav file for the text
+					message_location, Type.WAVE);     //To Create the wav file for the text
 			voice.setAudioPlayer(audioPlayer);
 			voice.setVolume(100);
 			voice.speak(voiceMsg); //Speaks the text

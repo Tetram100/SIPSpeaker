@@ -15,10 +15,12 @@ public class WebServer {
 
 	int port;
 	String message;
+	String message_location;
 
-	public WebServer(int port, String message) {
+	public WebServer(int port, String message, String message_location) {
 		this.port = port;
 		this.message = message;
+		this.message_location = message_location;
 	}
 
 	protected void start() {
@@ -163,10 +165,10 @@ public class WebServer {
 							this.message = message;
 							//We create the wav file
 							FreeTTS freetts = new FreeTTS(message);
-							String response = freetts.writeMessage();
+							String response = freetts.writeMessage(this.message_location);
 							
 							System.out.println("The SIP message has been updated.");
-							System.out.println("New message:" + message);
+							System.out.println("New message: " + message);
 
 							System.out.println("Response of the wav creation:" + response);
 							//We send the response
