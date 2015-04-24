@@ -51,7 +51,7 @@ public class Main {
 		Thread web_server = new ThreadWeb(default_message, message_location, web_port);
 		web_server.start();
 
-		Thread sip_server = new ThreadSIPServer(sip_port);
+		Thread sip_server = new ThreadSIPServer(sip_port, sip_interface);
 		sip_server.start();
 	}
 
