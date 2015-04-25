@@ -5,7 +5,7 @@ import java.util.Properties;
 public class Main {
 
 	public static int http_port = 8080;
-	public static int sip_port = 40000;
+	public static int sip_port = 2000;
 	public static String sip_user = "sipspeaker";
 	public static String sip_interface = "127.0.0.1";
 	public static String http_interface = "127.0.0.1";

@@ -11,6 +11,6 @@
 	<classpathentry kind="lib" path="lib/freetts.jar"/>
 	<classpathentry kind="lib" path="lib/freetts-jsapi10.jar"/>
 	<classpathentry kind="lib" path="lib/mbrola.jar"/>
-	<classpathentry kind="lib" path="/home/tom/Documents/SIP_Speaker/SIPSpeaker/lib/jlibrtp-20100223.012658-1.jar"/>
+	<classpathentry kind="lib" path="lib/jlibrtp-20100223.012658-1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
