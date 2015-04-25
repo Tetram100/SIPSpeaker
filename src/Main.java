@@ -9,7 +9,7 @@ public class Main {
 	public static String sip_user = "sipspeaker";
 	public static String sip_interface = "127.0.0.1";
 	public static String http_interface = "127.0.0.1";
-	public static String default_message = "Hello world!";
+	public static String default_message = "I'm Batman";
 	public static String message_location = "message";
 	public static String fileName = "sipspeaker.cfg";
 

@@ -3,7 +3,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 public class SessionSIP {
 
@@ -36,7 +35,7 @@ public class SessionSIP {
 		String callID = "";
 		String numb = "";
 		String id_caller = "";
-		int port_socket = 0;
+		int port_rtp_caller = 0;
 
 		for (String part : req) {
 			if (part.startsWith("Via")) {
@@ -46,13 +45,12 @@ public class SessionSIP {
 			if (part.startsWith("From")) {
 				from = part;
 				caller_id = part.split(" ")[1];
-				System.out.println(caller_id);
 			}
 
 			if (part.startsWith("To")) {
 				to = part;
 				socket_id = part.split(" ")[1];
-				System.out.println(socket_id);
+				socket_id = socket_id.substring(0, socket_id.length() - 1);
 			}
 
 			if (part.startsWith("Contact")) {
@@ -60,8 +58,9 @@ public class SessionSIP {
 			}
 
 			if (part.startsWith("m=")) {
-				port_socket = Integer.parseInt(part.split(" ")[1]);
+				port_rtp_caller = Integer.parseInt(part.split(" ")[1]);
 			}
+
 		}
 
 		req = this.request.split("[ \n]");
@@ -101,9 +100,8 @@ public class SessionSIP {
 		// byte[].
 		// we need to add a tag to the "To" field.
 
-		String toTag = this.generateTag();
-		System.out.println(to);
-		to = to.substring(0, to.length() - 1) + ";tag=" + toTag;
+		String tag = this.generateTag();
+		to = to.substring(0, to.length() - 1) + ";tag=" + tag;
 
 		// SIP header of the OK message. The Content-length is missing and is
 		// added after.
@@ -166,40 +164,33 @@ public class SessionSIP {
 		}
 
 		// TODO port variable for the RTP session.
-		/*
-		 * SessionAudio session = new SessionAudio(20000, this.addr_socket,
-		 * this.port_caller, this.addr_caller.getHostAddress(),
-		 * "/home/tom/Documents/SIP_Speaker/SIPSpeaker/message.wav");
-		 * session.sendFile();
-		 */
 
-		// TODO make the BYE message and send it.
+		// Creation and sending of the SessionAudio that will send the RTP
+		// messages.
+		SessionAudio session = new SessionAudio(20000, this.addr_socket,
+				port_rtp_caller, this.addr_caller.getHostAddress(),
+				"/home/tom/Documents/SIP_Speaker/SIPSpeaker/message.wav");
+
+		session.sendFile();
+
 		String bye = new String("BYE sip:" + id_caller + " SIP/2.0\n"
 				+ "Via: SIP/2.0/UDP " + this.addr_socket.getHostAddress() + ":"
 				+ Integer.toString(this.port_socket) + ";rport;branc=z9hG4bk"
-				+ this.generateTag() + "\n" + from + "\n" + to + "\n"
-				+ "Call-ID: " + callID + "\n" + "Cseq: 21 BYE\n"
-				+ "Contact: \"Thomas\" <sip:"
+				+ this.generateTag() + "\n" + "From: " + socket_id + ";tag="
+				+ tag + "\n" + "To: " + caller_id + "\n" + "Call-ID: " + callID
+				+ "\n" + "Cseq: 21 BYE\n" + "Contact: \"Thomas\" <sip:"
 				+ this.addr_socket.getHostAddress() + ":"
 				+ Integer.toString(this.port_socket) + ">\n"
 				+ "Max-Forwards: 70\n" + "Content-Length: 0\n" + "\n");
 
 		byte[] bbye = bye.getBytes();
-		
-		try {
-		    TimeUnit.SECONDS.sleep(5);
-		} catch (InterruptedException e) {
-		    System.out.println("Problem while sleeping: " + e);
-		}
-		
-		System.out.println(bye);
+
 		// send the BYE request to the client at "addr_caller" and "port_caller"
 		packet = new DatagramPacket(bbye, bbye.length, this.addr_caller,
 				this.port_caller);
-		System.out.println(packet);
+
 		try {
 			this.socket.send(packet);
-			System.out.println("Inside try");
 		} catch (IOException e) {
 			System.out.println("Problem while sending BYE message: " + e);
 			return false;
@@ -208,7 +199,7 @@ public class SessionSIP {
 		return true;
 	}
 
-	// generate a string of length "lengthString" to generate tags for SIP
+	// generate a string with the UUID library to get tags for SIP
 	public String generateTag() {
 		UUID tagUUID = UUID.randomUUID();
 		String tagString = tagUUID.toString();
