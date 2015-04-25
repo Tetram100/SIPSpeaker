@@ -5,7 +5,7 @@ import java.util.Properties;
 public class Main {
 
 	public static int http_port = 8080;
-	public static int sip_port = 2000;
+	public static int sip_port = 40000;
 	public static String sip_user = "sipspeaker";
 	public static String sip_interface = "127.0.0.1";
 	public static String http_interface = "127.0.0.1";
@@ -64,6 +64,8 @@ public class Main {
 		Thread web_server = new ThreadWeb(default_message, message_location, http_port);
 		web_server.start();
 
+		
+		// TODO Remettre correctement la création du thread.
 		Thread sip_server = new ThreadSIPServer(40000, "192.168.0.101", sip_user, message_location);
 		// Thread sip_server = new ThreadSIPServer(sip_port, sip_interface, sip_user, message_location);
 		sip_server.start();

@@ -3,7 +3,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.UUID;
 
 public class ThreadSIPServer extends Thread {
 
@@ -12,11 +11,11 @@ public class ThreadSIPServer extends Thread {
 	public InetAddress addr;
 	public String sipUser;
 	public String messageLocation;
-	
-	
+
 	public DatagramSocket socket = null;
 
-	public ThreadSIPServer(int port, String addrSIP, String sipUser, String messageLocation) {
+	public ThreadSIPServer(int port, String addrSIP, String sipUser,
+			String messageLocation) {
 		this.port = port;
 		this.sipUser = sipUser;
 		this.messageLocation = messageLocation;
@@ -25,8 +24,9 @@ public class ThreadSIPServer extends Thread {
 		try {
 			addr = InetAddress.getByName(this.sAdd);
 		} catch (UnknownHostException e) {
-			System.out.println("Error while getting the datagram socket's address: "
-					+ e);
+			System.out
+					.println("Error while getting the datagram socket's address: "
+							+ e);
 			return;
 		}
 
@@ -44,149 +44,39 @@ public class ThreadSIPServer extends Thread {
 	public void run() {
 		while (true) {
 
+			// If the buf size is too short, the request is cut.
+			byte[] buf = new byte[1000];
+
+			// receive request
+			DatagramPacket packet = new DatagramPacket(buf, buf.length);
+
 			try {
-				byte[] buf = new byte[1000];
-
-				// receive request
-				DatagramPacket packet = new DatagramPacket(buf, buf.length);
 				this.socket.receive(packet);
-
-				String request = new String(packet.getData());
-
-				//System.out.println(request);
-
-				if (request.startsWith("INVITE")) {
-
-					String[] req = request.split("\n");
-					String via = "";
-					String from = "";
-					String to = "";
-					String callID = "";
-					String numb = "";
-					int port_dest = 0;
-
-					for (String part : req) {
-						if (part.startsWith("Via")) {
-							via = part;
-						}
-
-						if (part.startsWith("From")) {
-							from = part;
-						}
-
-						if (part.startsWith("To")) {
-							to = part;
-						}
-						
-						if (part.startsWith("m=")){
-							port_dest = Integer.parseInt(part.split(" ")[1]);
-						}
-					}
-
-					req = request.split("[ \n]");
-					int k = 0;
-					for (String part : req) {
-
-						if (part.equals("Call-ID:")) {
-							callID = req[k + 1];
-						}
-
-						if (part.equals("CSeq:")) {
-							numb = req[k + 1];
-						}
-						k++;
-					}
-
-					// write the 100 trying response and convert the response in
-					// byte[].
-					String trying = new String("SIP/2.0 100 Trying\n" 
-							+ via
-							+ "\n" + from 
-							+ "\n" + to 
-							+ "\nCall-ID: " + callID
-							+ "\nCseq: " + numb + " INVITE"
-							+ "\nContent-Length: 0\n\n");
-
-
-					byte[] btrying = trying.getBytes();
-
-					// send the response to the client at "address" and "port".
-					InetAddress address = packet.getAddress();
-					String stringAdd = address.getHostAddress() ;
-					int port = packet.getPort();
-
-					packet = new DatagramPacket(btrying, btrying.length,
-							address, port);
-					
-					socket.send(packet);
-
-					// write the 200 OK response and convert the response in
-					// byte[].
-					// we need to add a tag to the "To" field.
-					
-					String toTag = this.generateTag();
-					
-					String ok = new String("SIP/2.0 200 OK\n" 
-							+ via + "\n"
-							+ from + "\n" 
-							+ to.substring(0,to.length()-1) +";tag="+toTag
-							+ "\nCall-ID: " + callID
-							+ "\nCseq: " + numb + " INVITE\n"
-							+ "Supported: replaces\n"
-							+ "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO\n"
-							+ "Contact: \"Thomas\" <sip:"+this.sAdd+":40000>\n"
-							+ "Content-Type: application/sdp\n");
-							
-					String sdp = new String("v=0\n"
-							+ "o=georges 4535 4535 IN IP4 "+this.sAdd+"\n"
-							+ "s=messageAuto\n"
-							+ "c=IN IP4 127.0.0.1\n"
-							+ "t=0 0\n"
-							+ "a=rtcp-xr:rcvr-rtt=all:10000 stat-sumary=loss,dup,jitt,TTL voip-metrics\n"
-							
-							//TODO change the port to allow multiple RTP sessions
-							+ "m=audio 20000 RTP/AVP 0 101/n" //124 111 110 0 8 101\n"
-							+ "a=rtpmap:101 telephone-event/8000\n"
-							//+ "a=fmtp:101 0-16\n"
-							/*
-							+ "a=rtpmap:0 PCMU/8000\n"
-							+ "a=rtpmap:8 PCMA/8000\n"
-							+ "a=rtpmap:101 telephone-event/8000\n"
-							+ "a=fmtp:101 0-16\n"
-							+ "a=silenceSupp:off\n\n");
-							*/
-							);
-					
-					ok = ok + "Content-Length: " + String.valueOf(sdp.length()) + "\n\n" + sdp;
-
-					byte[] bok = ok.getBytes();
-
-					// send the response to the client at "address" and "port"
-					packet = new DatagramPacket(bok, bok.length, address, port);
-					socket.send(packet);
-					
-					
-					SessionAudio session = new SessionAudio(20000, this.addr, port_dest, stringAdd, "/home/tom/Documents/SIP_Speaker/SIPSpeaker/message.wav");
-					session.sendFile();
-					
-					String bye = new String("");
-				}
-
 			} catch (IOException e) {
 				System.out.println("Error while receiving a packet: " + e);
 				return;
 			}
+
+			String request = new String(packet.getData());
+
+			if (request.startsWith("INVITE")) {
+
+				
+				InetAddress addr_dest = packet.getAddress();
+				// TODO stringAddr_dest useful?
+				String stringAddr_dest = addr_dest.getHostAddress();
+				int port_dest = packet.getPort();
+
+				// Create the SIP session and start the sending (Trying + OK + RTP + BYE).
+				SessionSIP sess = new SessionSIP(request, socket, this.addr,
+						this.port, addr_dest, port_dest);
+				if (sess.start()) {
+					System.out.println("Sending ok.");
+				} else {
+					System.out.println("Preoblem while sending.");
+				}
+			}
 		}
 	}
-	
-	
-	// generate a string of length "lengthString" to generate tags for SIP
-	public String generateTag(){
-		UUID tagUUID = UUID.randomUUID();
-		String tagString = tagUUID.toString();
-		String[] tagStringArray = tagString.split("-");
-		String output = tagStringArray[0];
-		
-		return output;
-	}
+
 }

@@ -9,7 +9,6 @@ import java.lang.String;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.util.Enumeration;
 import org.jlibrtp.*;
 
 
@@ -29,10 +28,12 @@ public class SessionAudio implements RTPAppIntf {
 		this.messageLocation = messageLocation;
 		// creation of the RTP session.
 		try {
-			DatagramSocket rtp = new DatagramSocket(port_sender, add_sender);
-			System.out.println(add_sender.getHostAddress());
-			DatagramSocket rtcp = new DatagramSocket(port_sender + 1, add_sender);
-			this.rtpSession = new RTPSession(rtp, rtcp);
+			DatagramSocket rtpSocket = new DatagramSocket(port_sender, add_sender);
+			DatagramSocket rtcpSocket = new DatagramSocket(port_sender + 1, add_sender);
+			System.out.println(rtpSocket);
+			System.out.println(rtcpSocket);
+			this.rtpSession = new RTPSession(rtpSocket, rtcpSocket);
+			int temp = this.rtpSession.updateRTCPSock(rtcpSocket);
 			// ce register est-il bien utile ?
 			// this.rtpSession.RTPSessionRegister(this,null, null);
 		} catch (SocketException e) {
@@ -101,7 +102,15 @@ public class SessionAudio implements RTPAppIntf {
 			return;
 		}
 		
-		// this.rtpSession.endSession();
+		String name = "name";
+		byte[] nameBytes = name.getBytes();
+		String data= "abcd";
+		byte[] dataBytes = data.getBytes();
+		
+		
+		int ret = rtpSession.sendRTCPAppPacket(receiver.getSSRC(), 0, nameBytes, dataBytes);
+
+		this.rtpSession.endSession();
 	}
 	
 }
