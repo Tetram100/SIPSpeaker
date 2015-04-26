@@ -41,13 +41,16 @@ public class SessionAudio implements RTPAppIntf {
 			return;
 		}
 		
-		
-		
-		this.receiver = new Participant(add_receiver, port_receiver, port_receiver + 1);
-		this.rtpSession.addParticipant(this.receiver);
+		try {
+			this.receiver = new Participant(add_receiver, port_receiver, port_receiver + 1);
+			this.rtpSession.addParticipant(this.receiver);
+		} catch (Exception e) {
+			System.out.println("Problem while adding a participant: " + e);
+			return;
+		}
 		
 		try {
-			TimeUnit.SECONDS.sleep(1);
+			TimeUnit.SECONDS.sleep(2);
 		} catch (InterruptedException e) {
 			System.out.println("Problem while sleeping: " + e);
 		}
@@ -100,11 +103,13 @@ public class SessionAudio implements RTPAppIntf {
 				nBytesRead = audioInputStream.read(abData, 0, abData.length);
 				
 				if (nBytesRead >= 0) {
+					
 					try {
-						TimeUnit.MILLISECONDS.sleep(70);
+						TimeUnit.MILLISECONDS.sleep(20);
 					} catch (InterruptedException e) {
 						System.out.println("Problem while sleeping: " + e);
 					}
+					
 					this.rtpSession.sendData(abData);
 					
 				}
@@ -116,7 +121,7 @@ public class SessionAudio implements RTPAppIntf {
 		}
 		
 		try {
-			TimeUnit.SECONDS.sleep(3);
+			TimeUnit.SECONDS.sleep(5);
 		} catch (InterruptedException e) {
 			System.out.println("Problem while sleeping: " + e);
 		}

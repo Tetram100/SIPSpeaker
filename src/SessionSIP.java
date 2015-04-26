@@ -6,22 +6,27 @@ import java.util.UUID;
 
 public class SessionSIP {
 
+	String sip_user;
 	String request;
 	DatagramSocket socket;
 	InetAddress addr_socket;
 	int port_socket;
 	InetAddress addr_caller;
 	int port_caller;
+	int rtp_port;
 
-	public SessionSIP(String request, DatagramSocket socket,
+	// TODO changer construct, ajouter le champ "port_rtp".
+	public SessionSIP(String sip_user, String request, DatagramSocket socket,
 			InetAddress addr_socket, int port_socket, InetAddress addr_caller,
-			int port_caller) {
+			int port_caller, int rtp_port) {
+		this.sip_user = sip_user;
 		this.socket = socket;
 		this.request = request;
 		this.addr_socket = addr_socket;
 		this.port_socket = port_socket;
 		this.addr_caller = addr_caller;
 		this.port_caller = port_caller;
+		this.rtp_port = rtp_port;
 	}
 
 	public boolean start() {
@@ -77,6 +82,8 @@ public class SessionSIP {
 			k++;
 		}
 
+		// TODO Tester si tous les champs sont corrects (au moins non vide).
+		
 		// write the 100 trying response and convert the response in
 		// byte[].
 		String trying = new String("SIP/2.0 100 Trying\n" + via + "\n" + from
@@ -117,9 +124,10 @@ public class SessionSIP {
 						+ "\nCseq: "
 						+ numb
 						+ " INVITE\n"
-						+ "Supported: replaces\n"
+						+ "User-Agent: pipophone\n"
+						+ "Supported: outboud\n"
 						+ "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO\n"
-						+ "Contact: \"Thomas\" <sip:"
+						+ "Contact: <sip:" + this.sip_user + "@"
 						+ this.addr_socket.getHostAddress() + ":"
 						+ Integer.toString(this.port_socket) + ">\n"
 						+ "Content-Type: application/sdp\n");
@@ -128,15 +136,15 @@ public class SessionSIP {
 		String sdp = new String(
 				"v=0\n"
 						+ "o=georges 4535 4535 IN IP4 "
-						+ this.addr_caller.getHostAddress()
+						+ this.addr_socket.getHostAddress()
 						+ "\n"
 						+ "s=messageAuto\n"
-						+ "c=IN IP4 127.0.0.1\n"
+						+ "c=IN IP4 "+addr_socket.getHostAddress()+"\n"
 						+ "t=0 0\n"
 						+ "a=rtcp-xr:rcvr-rtt=all:10000 stat-sumary=loss,dup,jitt,TTL voip-metrics\n"
 
 						// TODO change the port to allow multiple RTP sessions
-						+ "m=audio 20000 RTP/AVP 0 101/n" // 124 111 110 0 8
+						+ "m=audio "+this.rtp_port+" RTP/AVP 0 101\n" // 124 111 110 0 8
 															// 101\n"
 						+ "a=rtpmap:101 telephone-event/8000\n"
 		// + "a=fmtp:101 0-16\n"
@@ -156,20 +164,21 @@ public class SessionSIP {
 		// send the OK response to the client at "addr_caller" and "port_caller"
 		packet = new DatagramPacket(bok, bok.length, this.addr_caller,
 				this.port_caller);
+		
 		try {
 			this.socket.send(packet);
 		} catch (IOException e) {
 			System.out.println("Problem while sending OK message: " + e);
 			return false;
 		}
-
-		// TODO port variable for the RTP session.
+		
+		// TODO port variable for the RTP session. Nom du fichier wav !!
 
 		// Creation and sending of the SessionAudio that will send the RTP
 		// messages.
-		SessionAudio session = new SessionAudio(20000, this.addr_socket,
+		SessionAudio session = new SessionAudio(this.rtp_port, this.addr_socket,
 				port_rtp_caller, this.addr_caller.getHostAddress(),
-				"/home/tom/Documents/SIP_Speaker/SIPSpeaker/message.wav");
+				"message.wav");
 
 		session.sendFile();
 

@@ -9,7 +9,7 @@ public class Main {
 	public static String sip_user = "sipspeaker";
 	public static String sip_interface = "127.0.0.1";
 	public static String http_interface = "127.0.0.1";
-	public static String default_message = "I'm Batman";
+	public static String default_message = "Welcome to SIP Speaker. This is my own answering machine. You have no new message.";
 	public static String message_location = "message";
 	public static String fileName = "sipspeaker.cfg";
 
@@ -66,7 +66,7 @@ public class Main {
 
 		
 		// TODO Remettre correctement la création du thread.
-		Thread sip_server = new ThreadSIPServer(40000, "192.168.0.101", sip_user, message_location);
+		Thread sip_server = new ThreadSIPServer(sip_port, sip_interface, sip_user, message_location);
 		// Thread sip_server = new ThreadSIPServer(sip_port, sip_interface, sip_user, message_location);
 		sip_server.start();
 	}
