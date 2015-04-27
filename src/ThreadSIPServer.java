@@ -190,9 +190,7 @@ public class ThreadSIPServer extends Thread {
 						}
 						
 						try {
-							System.out.println("before start TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT");
 							thread_SIP.start();
-							System.out.println("after start TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT");
 						} catch (Exception e) {
 							System.out
 									.println("Error while launching the SIP session thread: "
