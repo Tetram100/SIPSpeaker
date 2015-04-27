@@ -77,7 +77,7 @@ public class ThreadSIPServer extends Thread {
 			// TODO faire avec le hashmap
 			// If the request begins with BYE, we check if it corresponds to one of our calls with the Call-ID. If so, we call the method client_hangup().
 			if (request.startsWith("BYE")){
-				String[] string_request = request.split("[ \n]");
+				String[] string_request = request.split("[ \r\n]");
 				int k = 0;
 				String callID = "";
 				for (String part : string_request) {

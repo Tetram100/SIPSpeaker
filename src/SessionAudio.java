@@ -108,7 +108,7 @@ public class SessionAudio implements RTPAppIntf {
 				if (nBytesRead >= 0) {
 					
 					try {
-						TimeUnit.MILLISECONDS.sleep(20);
+						TimeUnit.MILLISECONDS.sleep(100);
 					} catch (InterruptedException e) {
 						System.out.println("Problem while sleeping: " + e);
 					}

@@ -65,7 +65,7 @@ public class SessionSIP {
 				id_caller = part.split(":")[2];
 			}
 
-			if (part.startsWith("m=")) {
+			if (part.startsWith("m=audio")) {
 				port_rtp_caller = Integer.parseInt(part.split(" ")[1]);
 			}
 
