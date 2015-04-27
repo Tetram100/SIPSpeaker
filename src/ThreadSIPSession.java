@@ -14,11 +14,12 @@ public class ThreadSIPSession extends Thread {
 	int port_caller;
 	String call_ID;
 	SessionSIP session_SIP;
+	String message_location;
 
 	public ThreadSIPSession(DatagramSocket socket, String request,
 			int rtp_port, ThreadSIPServer server, String sip_user,
 			InetAddress addr_socket, int port_socket, InetAddress addr_caller,
-			int port_caller, String call_ID) {
+			int port_caller, String call_ID, String message_location) {
 		this.socket = socket;
 		this.request = request;
 		this.rtp_port = rtp_port;
@@ -29,6 +30,7 @@ public class ThreadSIPSession extends Thread {
 		this.addr_caller = addr_caller;
 		this.port_caller = port_caller;
 		this.call_ID = call_ID;
+		this.message_location = message_location;
 	}
 
 	public void run() {
@@ -37,7 +39,7 @@ public class ThreadSIPSession extends Thread {
 		// + OK + RTP + BYE).
 		this.session_SIP = new SessionSIP(this.sip_user, request,
 				socket, this.addr_socket, this.port_socket, this.addr_caller,
-				this.port_caller, this.rtp_port);
+				this.port_caller, this.rtp_port, this.message_location);
 		if (this.session_SIP.start()) {
 			System.out.println("Sending ok.");
 		} else {

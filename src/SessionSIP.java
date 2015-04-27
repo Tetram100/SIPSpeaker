@@ -16,11 +16,11 @@ public class SessionSIP {
 	int rtp_port;
 	SessionAudio session_RTP;
 	boolean hangup;
+	String message_location;
 
-	// TODO changer construct, ajouter le champ "port_rtp".
 	public SessionSIP(String sip_user, String request, DatagramSocket socket,
 			InetAddress addr_socket, int port_socket, InetAddress addr_caller,
-			int port_caller, int rtp_port) {
+			int port_caller, int rtp_port, String message_location) {
 		this.sip_user = sip_user;
 		this.socket = socket;
 		this.request = request;
@@ -30,6 +30,7 @@ public class SessionSIP {
 		this.port_caller = port_caller;
 		this.rtp_port = rtp_port;
 		this.hangup = false;
+		this.message_location = message_location;
 	}
 
 	public boolean start() {
@@ -110,7 +111,7 @@ public class SessionSIP {
 		// byte[].
 		// we need to add a tag to the "To" field.
 
-		String tag = this.generateTag();
+		String tag = SessionSIP.generateTag();
 		to = to.substring(0, to.length()) + ";tag=" + tag;
 
 		// SIP header of the OK message. The Content-length is missing and is
@@ -145,8 +146,6 @@ public class SessionSIP {
 						+ "c=IN IP4 "+addr_socket.getHostAddress()+"\r\n"
 						+ "t=0 0\r\n"
 						+ "a=rtcp-xr:rcvr-rtt=all:10000 stat-sumary=loss,dup,jitt,TTL voip-metrics\r\n"
-
-						// TODO change the port to allow multiple RTP sessions
 						+ "m=audio "+this.rtp_port+" RTP/AVP 0 101\r\n"
 						+ "a=rtpmap:101 telephone-event/8000\r\n"
 		);
@@ -168,13 +167,11 @@ public class SessionSIP {
 			return false;
 		}
 		
-		// TODO port variable for the RTP session. Nom du fichier wav !!
-
 		// Creation and sending of the SessionAudio that will send the RTP
 		// messages.
 		this.session_RTP = new SessionAudio(this.rtp_port, this.addr_socket,
 				port_rtp_caller, this.addr_caller.getHostAddress(),
-				"message.wav");
+				message_location + ".wav");
 
 		try {
 			this.session_RTP.sendFile();
@@ -186,7 +183,7 @@ public class SessionSIP {
 			String bye = new String("BYE sip:" + id_caller + " SIP/2.0\r\n"
 					+ "Via: SIP/2.0/UDP " + this.addr_socket.getHostAddress() + ":"
 					+ Integer.toString(this.port_socket) + ";rport;branc=z9hG4bk"
-					+ this.generateTag() + "\r\n" + "From: " + socket_id + ";tag="
+					+ SessionSIP.generateTag() + "\r\n" + "From: " + socket_id + ";tag="
 					+ tag + "\r\n" + "To: " + caller_id + "\r\n" + "Call-ID: " + callID
 					+ "\r\n" + "Cseq: 21 BYE\r\n" + "Contact: \"Thomas\" <sip:"
 					+ this.addr_socket.getHostAddress() + ":"
@@ -211,7 +208,7 @@ public class SessionSIP {
 	}
 
 	// generate a string with the UUID library to get tags for SIP
-	public String generateTag() {
+	public static String generateTag() {
 		UUID tagUUID = UUID.randomUUID();
 		String tagString = tagUUID.toString();
 		String[] tagStringArray = tagString.split("-");

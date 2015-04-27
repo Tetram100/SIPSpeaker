@@ -80,10 +80,9 @@ public class Main {
 		web_server.start();
 
 
-		// TODO Remettre correctement la création du thread.
+		// Create the thread for the sip server and launch it.
 		System.out.println("Server sip started on: " + sip_interface + ":" + sip_port);
 		Thread sip_server = new ThreadSIPServer(sip_port, sip_interface, sip_user, message_location);
-		// Thread sip_server = new ThreadSIPServer(sip_port, sip_interface, sip_user, message_location);
 		sip_server.start();
 	}
 

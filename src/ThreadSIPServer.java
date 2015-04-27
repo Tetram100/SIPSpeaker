@@ -29,7 +29,7 @@ public class ThreadSIPServer extends Thread {
 		this.rtpPort_SIP_sessions = new Vector<Integer>(1);
 
 		try {
-			addr = InetAddress.getByName(this.sAdd);
+			this.addr = InetAddress.getByName(this.sAdd);
 		} catch (UnknownHostException e) {
 			System.out
 					.println("Error while getting the datagram socket's address: "
@@ -74,7 +74,6 @@ public class ThreadSIPServer extends Thread {
 
 			String request = new String(packet.getData());
 
-			// TODO faire avec le hashmap
 			// If the request begins with BYE, we check if it corresponds to one of our calls with the Call-ID. If so, we call the method client_hangup().
 			if (request.startsWith("BYE")){
 				String[] string_request = request.split("[ \r\n]");
@@ -126,10 +125,6 @@ public class ThreadSIPServer extends Thread {
 					ack_bye += "\r\n";
 					
 					byte[] back_bye = ack_bye.getBytes();
-
-					// TODO be sure that we don't need those lines.
-					// InetAddress addr_dest = packet.getAddress();
-					// int port_dest = packet.getPort();
 					
 					packet = new DatagramPacket(back_bye, back_bye.length,
 							addr_dest, port_dest);
@@ -177,13 +172,9 @@ public class ThreadSIPServer extends Thread {
 							rtpPort_SIP_sessions.addElement(rtpPort);
 						}
 
-						// TODO be sure that we don't need those lines.
-						// InetAddress addr_dest = packet.getAddress();
-						// int port_dest = packet.getPort();
-
 						ThreadSIPSession thread_SIP = new ThreadSIPSession(this.socket, request, rtpPort,
 								this, this.sipUser, this.addr, this.port,
-								addr_dest, port_dest, callID);
+								addr_dest, port_dest, callID, this.messageLocation);
 						
 						synchronized (this.sessions) {
 							this.sessions.put(callID,thread_SIP);
@@ -208,14 +199,63 @@ public class ThreadSIPServer extends Thread {
 						 */
 					}
 					else {
+						// The INVITE has already been answered. We reset the request string.
 						request = "";
-						//TODO INVITE déjà répondue.
 					}
 
 				} else {
-					request = "";
 					System.out.println("A client tried to call an unnkown user.");
-					// TODO error 404
+					
+					// Making of the response message "404 Not found".
+					String Via = "";
+					String From = "";
+					String To = "";
+					String Call_ID = "";
+					String CSeq = "";
+					
+					String[] split_request = request.split("\r\n");
+					for (String part : split_request){
+						if (part.startsWith("Via")){
+							Via = part;
+						}
+						if (part.startsWith("From")){
+							From = part;
+						}
+						if (part.startsWith("To")){
+							To = part;
+						}
+						if (part.startsWith("Call-ID")){
+							Call_ID  = part;
+						}
+						if (part.startsWith("CSeq")){
+							CSeq = part;
+						}
+					}
+					
+					String not_found = "SIP/2.0 404 Not Found\r\n";
+					not_found += Via + "\r\n";
+					not_found += From + "\r\n";
+					not_found += To + ";tag=" + SessionSIP.generateTag() + "\r\n";
+					not_found += Call_ID + "\r\n";
+					not_found += CSeq + "\r\n";
+					not_found += "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY\r\n";
+					not_found += "Contact: <" + this.sipUser + "@" + this.sAdd +":"+ this.port + ">\r\n";
+					not_found += "Content-Length: 0\r\n";
+					not_found += "\r\n";
+					
+					byte[] bnot_found = not_found.getBytes();
+					
+					packet = new DatagramPacket(bnot_found, bnot_found.length,
+							addr_dest, port_dest);
+					
+					try {
+						socket.send(packet);
+						System.out.println("404 Not Found message sent.");
+					} catch (IOException e1) {
+						System.out.println("Problem while sending 404 Not Found message: " + e1);
+					}
+					
+					request = "";
 				}
 			}
 		}

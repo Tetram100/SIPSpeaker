@@ -122,6 +122,7 @@ public class SessionAudio implements RTPAppIntf {
 			System.out.println("Problem while sending the audio: " + e);
 			return;
 		}
+		
 		if (!end){
 			try {
 				TimeUnit.SECONDS.sleep(5);
