@@ -14,6 +14,8 @@ public class SessionSIP {
 	InetAddress addr_caller;
 	int port_caller;
 	int rtp_port;
+	SessionAudio session_RTP;
+	boolean hangup;
 
 	// TODO changer construct, ajouter le champ "port_rtp".
 	public SessionSIP(String sip_user, String request, DatagramSocket socket,
@@ -27,11 +29,12 @@ public class SessionSIP {
 		this.addr_caller = addr_caller;
 		this.port_caller = port_caller;
 		this.rtp_port = rtp_port;
+		this.hangup = false;
 	}
 
 	public boolean start() {
 
-		String[] req = this.request.split("\n");
+		String[] req = this.request.split("\r\n");
 		String via = "";
 		String from = "";
 		String caller_id = "";
@@ -55,7 +58,7 @@ public class SessionSIP {
 			if (part.startsWith("To")) {
 				to = part;
 				socket_id = part.split(" ")[1];
-				socket_id = socket_id.substring(0, socket_id.length() - 1);
+				socket_id = socket_id.substring(0, socket_id.length());
 			}
 
 			if (part.startsWith("Contact")) {
@@ -68,7 +71,7 @@ public class SessionSIP {
 
 		}
 
-		req = this.request.split("[ \n]");
+		req = this.request.split("[ \r\n]");
 		int k = 0;
 		for (String part : req) {
 
@@ -86,9 +89,9 @@ public class SessionSIP {
 		
 		// write the 100 trying response and convert the response in
 		// byte[].
-		String trying = new String("SIP/2.0 100 Trying\n" + via + "\n" + from
-				+ "\n" + to + "\nCall-ID: " + callID + "\nCseq: " + numb
-				+ " INVITE" + "\nContent-Length: 0\n\n");
+		String trying = new String("SIP/2.0 100 Trying\r\n" + via + "\r\n" + from + "\r\n"
+				+ to + "\r\n" + "Call-ID: " + callID + "\r\n" + "Cseq: " + numb
+				+ " INVITE" + "\r\n" + "Content-Length: 0\r\n\r\n");
 
 		byte[] btrying = trying.getBytes();
 
@@ -108,55 +111,48 @@ public class SessionSIP {
 		// we need to add a tag to the "To" field.
 
 		String tag = this.generateTag();
-		to = to.substring(0, to.length() - 1) + ";tag=" + tag;
+		to = to.substring(0, to.length()) + ";tag=" + tag;
 
 		// SIP header of the OK message. The Content-length is missing and is
 		// added after.
 		String ok = new String(
-				"SIP/2.0 200 OK\n"
+				"SIP/2.0 200 OK\r\n"
 						+ via
-						+ "\n"
+						+ "\r\n"
 						+ from
-						+ "\n"
+						+ "\r\n"
 						+ to
-						+ "\nCall-ID: "
+						+ "\r\nCall-ID: "
 						+ callID
-						+ "\nCseq: "
+						+ "\r\nCSeq: "
 						+ numb
-						+ " INVITE\n"
-						+ "User-Agent: pipophone\n"
-						+ "Supported: outboud\n"
-						+ "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO\n"
+						+ " INVITE\r\n"
+						+ "User-Agent: pipophone\r\n"
+						+ "Supported: outboud\r\n"
+						+ "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO\r\n"
 						+ "Contact: <sip:" + this.sip_user + "@"
 						+ this.addr_socket.getHostAddress() + ":"
-						+ Integer.toString(this.port_socket) + ">\n"
-						+ "Content-Type: application/sdp\n");
+						+ Integer.toString(this.port_socket) + ">\r\n"
+						+ "Content-Type: application/sdp\r\n");
 
 		// SDP header + calculation of its length.
 		String sdp = new String(
-				"v=0\n"
+				"v=0\r\n"
 						+ "o=georges 4535 4535 IN IP4 "
 						+ this.addr_socket.getHostAddress()
-						+ "\n"
-						+ "s=messageAuto\n"
-						+ "c=IN IP4 "+addr_socket.getHostAddress()+"\n"
-						+ "t=0 0\n"
-						+ "a=rtcp-xr:rcvr-rtt=all:10000 stat-sumary=loss,dup,jitt,TTL voip-metrics\n"
+						+ "\r\n"
+						+ "s=messageAuto\r\n"
+						+ "c=IN IP4 "+addr_socket.getHostAddress()+"\r\n"
+						+ "t=0 0\r\n"
+						+ "a=rtcp-xr:rcvr-rtt=all:10000 stat-sumary=loss,dup,jitt,TTL voip-metrics\r\n"
 
 						// TODO change the port to allow multiple RTP sessions
-						+ "m=audio "+this.rtp_port+" RTP/AVP 0 101\n" // 124 111 110 0 8
-															// 101\n"
-						+ "a=rtpmap:101 telephone-event/8000\n"
-		// + "a=fmtp:101 0-16\n"
-		/*
-		 * + "a=rtpmap:0 PCMU/8000\n" + "a=rtpmap:8 PCMA/8000\n" +
-		 * "a=rtpmap:101 telephone-event/8000\n" + "a=fmtp:101 0-16\n" +
-		 * "a=silenceSupp:off\n\n");
-		 */
+						+ "m=audio "+this.rtp_port+" RTP/AVP 0 101\r\n"
+						+ "a=rtpmap:101 telephone-event/8000\r\n"
 		);
 
 		// Making of the OK message and conversion in byte[].
-		ok = ok + "Content-Length: " + String.valueOf(sdp.length()) + "\n\n"
+		ok = ok + "Content-Length: " + String.valueOf(sdp.length()) + "\r\n\r\n"
 				+ sdp;
 
 		byte[] bok = ok.getBytes();
@@ -176,33 +172,39 @@ public class SessionSIP {
 
 		// Creation and sending of the SessionAudio that will send the RTP
 		// messages.
-		SessionAudio session = new SessionAudio(this.rtp_port, this.addr_socket,
+		this.session_RTP = new SessionAudio(this.rtp_port, this.addr_socket,
 				port_rtp_caller, this.addr_caller.getHostAddress(),
 				"message.wav");
 
-		session.sendFile();
-
-		String bye = new String("BYE sip:" + id_caller + " SIP/2.0\n"
-				+ "Via: SIP/2.0/UDP " + this.addr_socket.getHostAddress() + ":"
-				+ Integer.toString(this.port_socket) + ";rport;branc=z9hG4bk"
-				+ this.generateTag() + "\n" + "From: " + socket_id + ";tag="
-				+ tag + "\n" + "To: " + caller_id + "\n" + "Call-ID: " + callID
-				+ "\n" + "Cseq: 21 BYE\n" + "Contact: \"Thomas\" <sip:"
-				+ this.addr_socket.getHostAddress() + ":"
-				+ Integer.toString(this.port_socket) + ">\n"
-				+ "Max-Forwards: 70\n" + "Content-Length: 0\n" + "\n");
-
-		byte[] bbye = bye.getBytes();
-
-		// send the BYE request to the client at "addr_caller" and "port_caller"
-		packet = new DatagramPacket(bbye, bbye.length, this.addr_caller,
-				this.port_caller);
-
 		try {
-			this.socket.send(packet);
-		} catch (IOException e) {
-			System.out.println("Problem while sending BYE message: " + e);
-			return false;
+			this.session_RTP.sendFile();
+		} catch (Exception e1) {
+			System.out.println("Problem while launching the method sendFIle of a SessionAUdio: " + e1);
+		}
+
+		if (!this.hangup){
+			String bye = new String("BYE sip:" + id_caller + " SIP/2.0\r\n"
+					+ "Via: SIP/2.0/UDP " + this.addr_socket.getHostAddress() + ":"
+					+ Integer.toString(this.port_socket) + ";rport;branc=z9hG4bk"
+					+ this.generateTag() + "\r\n" + "From: " + socket_id + ";tag="
+					+ tag + "\r\n" + "To: " + caller_id + "\r\n" + "Call-ID: " + callID
+					+ "\r\n" + "Cseq: 21 BYE\r\n" + "Contact: \"Thomas\" <sip:"
+					+ this.addr_socket.getHostAddress() + ":"
+					+ Integer.toString(this.port_socket) + ">\r\n"
+					+ "Max-Forwards: 70\r\n" + "Content-Length: 0\r\n" + "\r\n");
+
+			byte[] bbye = bye.getBytes();
+
+			// send the BYE request to the client at "addr_caller" and "port_caller"
+			packet = new DatagramPacket(bbye, bbye.length, this.addr_caller,
+					this.port_caller);
+
+			try {
+				this.socket.send(packet);
+			} catch (IOException e) {
+				System.out.println("Problem while sending BYE message: " + e);
+				return false;
+			}
 		}
 
 		return true;

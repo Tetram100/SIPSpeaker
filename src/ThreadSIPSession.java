@@ -13,6 +13,7 @@ public class ThreadSIPSession extends Thread {
 	InetAddress addr_caller;
 	int port_caller;
 	String call_ID;
+	SessionSIP session_SIP;
 
 	public ThreadSIPSession(DatagramSocket socket, String request,
 			int rtp_port, ThreadSIPServer server, String sip_user,
@@ -34,10 +35,10 @@ public class ThreadSIPSession extends Thread {
 		
 		// Create the SIP session and start the sending (Trying
 		// + OK + RTP + BYE).
-		SessionSIP sess = new SessionSIP(this.sip_user, request,
+		this.session_SIP = new SessionSIP(this.sip_user, request,
 				socket, this.addr_socket, this.port_socket, this.addr_caller,
 				this.port_caller, this.rtp_port);
-		if (sess.start()) {
+		if (this.session_SIP.start()) {
 			System.out.println("Sending ok.");
 		} else {
 			System.out.println("Problem while sending.");
@@ -51,6 +52,12 @@ public class ThreadSIPSession extends Thread {
 			this.server.rtpPort_SIP_sessions.removeElement(this.rtp_port);
 		}
 		
+		this.interrupt();
+	}
+	
+	public void client_hangup(){
+		this.session_SIP.session_RTP.end = true;
+		this.session_SIP.hangup = true;
 		this.interrupt();
 	}
 }

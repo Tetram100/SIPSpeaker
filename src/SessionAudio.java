@@ -17,24 +17,25 @@ import org.jlibrtp.*;
 //this class create the RTPsession on a port and an address and send the file.
 public class SessionAudio implements RTPAppIntf {
 
-	public RTPSession rtpSession = null;
-	public String messageLocation;
-	public final int EXTERNAL_BUFFER_SIZE = 1024;
+	public RTPSession rtp_session = null;
+	public String message_path;
+	public final int buffer_size = 1024;
 	public Participant receiver;
+	public boolean end;
 	
 	// The address of the sender and of the receiver are of different types.
-	public SessionAudio(int port_sender, InetAddress add_sender, int port_receiver, String add_receiver, String messageLocation){
+	public SessionAudio(int port_sender, InetAddress add_sender, int port_receiver, String add_receiver, String message_path){
 		
-		this.messageLocation = messageLocation;
+		this.message_path = message_path;
 		
 		// creation of the RTP session.
 		try {
 			System.out.println("Port sender: " + port_sender);
 			DatagramSocket rtpSocket = new DatagramSocket(port_sender, add_sender);
 			DatagramSocket rtcpSocket = new DatagramSocket(port_sender + 1, add_sender);
-			this.rtpSession = new RTPSession(rtpSocket, rtcpSocket);
+			this.rtp_session = new RTPSession(rtpSocket, rtcpSocket);
 			
-			this.rtpSession.RTPSessionRegister(this,null, null);
+			this.rtp_session.RTPSessionRegister(this,null, null);
 			
 		} catch (SocketException e) {
 			System.out.println("Problem while creating the RTPSession: " + e);
@@ -43,11 +44,13 @@ public class SessionAudio implements RTPAppIntf {
 		
 		try {
 			this.receiver = new Participant(add_receiver, port_receiver, port_receiver + 1);
-			this.rtpSession.addParticipant(this.receiver);
+			this.rtp_session.addParticipant(this.receiver);
 		} catch (Exception e) {
 			System.out.println("Problem while adding a participant: " + e);
 			return;
 		}
+		
+		this.end = false;
 		
 		try {
 			TimeUnit.SECONDS.sleep(2);
@@ -75,16 +78,16 @@ public class SessionAudio implements RTPAppIntf {
 	}
 	
 	public void sendFile(){
-		File audioFile = new File(this.messageLocation);
+		File audioFile = new File(this.message_path);
 		if (!audioFile.exists()) {
-			System.err.println("Wav file" + this.messageLocation + "doesn't exist.");
+			System.err.println("Wav file " + this.message_path + " doesn't exist.");
 			return;
 		}
 		
-		AudioInputStream audioInputStream = null;
+		AudioInputStream audio_input_stream = null;
 		
 		try {
-			audioInputStream = AudioSystem.getAudioInputStream(audioFile);
+			audio_input_stream = AudioSystem.getAudioInputStream(audioFile);
 		} catch (UnsupportedAudioFileException e) {
 			System.err.println("The audio file is not supported: "+e);
 			return;
@@ -94,13 +97,13 @@ public class SessionAudio implements RTPAppIntf {
 		}
 		
 		int nBytesRead = 0;
-		byte[] abData = new byte[EXTERNAL_BUFFER_SIZE];
+		byte[] data_to_send = new byte[buffer_size];
 		
 		
 		try {
-			while (nBytesRead != -1) {
+			while (nBytesRead != -1 && !end) {
 				
-				nBytesRead = audioInputStream.read(abData, 0, abData.length);
+				nBytesRead = audio_input_stream.read(data_to_send, 0, data_to_send.length);
 				
 				if (nBytesRead >= 0) {
 					
@@ -110,7 +113,7 @@ public class SessionAudio implements RTPAppIntf {
 						System.out.println("Problem while sleeping: " + e);
 					}
 					
-					this.rtpSession.sendData(abData);
+					this.rtp_session.sendData(data_to_send);
 					
 				}
 				
@@ -119,15 +122,16 @@ public class SessionAudio implements RTPAppIntf {
 			System.out.println("Problem while sending the audio: " + e);
 			return;
 		}
-		
-		try {
-			TimeUnit.SECONDS.sleep(5);
-		} catch (InterruptedException e) {
-			System.out.println("Problem while sleeping: " + e);
+		if (!end){
+			try {
+				TimeUnit.SECONDS.sleep(5);
+			} catch (InterruptedException e) {
+				System.out.println("Problem while sleeping: " + e);
+			}
 		}
 		
 		try {
-			this.rtpSession.endSession();
+			this.rtp_session.endSession();
 		} catch (Exception e) {
 			System.out.println("Problem while ending the RTP session: " + e);
 		}

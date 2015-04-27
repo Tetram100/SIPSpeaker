@@ -7,7 +7,7 @@ public class Main {
 	public static int http_port = 8080;
 	public static int sip_port = 40000;
 	public static String sip_user = "sipspeaker";
-	public static String sip_interface = "127.0.0.1";
+	public static String sip_interface = "10.0.2.15";
 	public static String http_interface = "127.0.0.1";
 	public static String default_message = "Welcome to SIP Speaker. This is my own answering machine. You have no new message.";
 	public static String message_location = "message";
@@ -66,6 +66,7 @@ public class Main {
 
 		
 		// TODO Remettre correctement la création du thread.
+		System.out.println("Server sip started on: " + sip_interface + ":" + sip_port);
 		Thread sip_server = new ThreadSIPServer(sip_port, sip_interface, sip_user, message_location);
 		// Thread sip_server = new ThreadSIPServer(sip_port, sip_interface, sip_user, message_location);
 		sip_server.start();
