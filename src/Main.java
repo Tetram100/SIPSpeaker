@@ -16,52 +16,50 @@ public class Main {
 
 	public static void main(String[] args) throws Exception{
 
-		//If no other config file we load the default one
-		if (args.length == 0){
+		//First we read the default one
+		try {
 			readConf(fileName);
-		} else {
-			//We try to read the arguments
-			try {
-				//We read the input from the command line interface
-				for (int i = 0; i < args.length; i = i+2) {
+		} catch (Exception e) {
+			System.out.println("Can't read the default value.");
+		}
+		//We try to read the arguments
+		try {
+			//We read the input from the command line interface
+			for (int i = 0; i < args.length; i = i+2) {
 
-					switch (args[i])
-					{
-					case "-c":
-						String config_file_name = args[i+1];
-						readConf(config_file_name);
-						break;
-					case "-user":
-						String sip_uri = args[i+1];
-						sip_user = sip_uri.substring(0, sip_uri.indexOf("@"));
-						if (sip_uri.indexOf(":") == -1){
-							sip_interface = sip_uri.substring(sip_uri.indexOf("@")+1);
-						} else {
-							sip_interface = sip_uri.substring(sip_uri.indexOf("@")+1, sip_uri.indexOf(":"));
-							sip_port = Integer.parseInt(sip_uri.substring(sip_uri.indexOf(":")+1));
-						}
-						break;
-					case "-http":
-						String http_bind_address = args[i+1];
-						if (http_bind_address.indexOf(":") != -1){
-							http_interface = http_bind_address.substring(0, http_bind_address.indexOf(":"));
-							http_port = Integer.parseInt(http_bind_address.substring(http_bind_address.indexOf(":")+1));
-						} else if (http_bind_address.indexOf(".") != -1) {
-							http_interface = http_bind_address;
-						} else {
-							http_port = Integer.parseInt(http_bind_address);
-						}
-						break;
-					default:
-						System.out.println("No input from the command line interface, the default value will be used.");
+				switch (args[i])
+				{
+				case "-c":
+					String config_file_name = args[i+1];
+					readConf(config_file_name);
+					break;
+				case "-user":
+					String sip_uri = args[i+1];
+					sip_user = sip_uri.substring(0, sip_uri.indexOf("@"));
+					if (sip_uri.indexOf(":") == -1){
+						sip_interface = sip_uri.substring(sip_uri.indexOf("@")+1);
+					} else {
+						sip_interface = sip_uri.substring(sip_uri.indexOf("@")+1, sip_uri.indexOf(":"));
+						sip_port = Integer.parseInt(sip_uri.substring(sip_uri.indexOf(":")+1));
 					}
-
+					break;
+				case "-http":
+					String http_bind_address = args[i+1];
+					if (http_bind_address.indexOf(":") != -1){
+						http_interface = http_bind_address.substring(0, http_bind_address.indexOf(":"));
+						http_port = Integer.parseInt(http_bind_address.substring(http_bind_address.indexOf(":")+1));
+					} else if (http_bind_address.indexOf(".") != -1) {
+						http_interface = http_bind_address;
+					} else {
+						http_port = Integer.parseInt(http_bind_address);
+					}
+					break;
+				default:
+					System.out.println("No input from the command line interface, the default value will be used.");
 				}
-			} catch (Exception e) {
-				System.out.println("Bad line command line interface input, the default value will be used.");
-				//We read the default conf file instead
-				readConf(fileName);
 			}
+		} catch (Exception e) {
+			System.out.println("Bad line command line interface input, the default value will be used.");
 		}
 
 		System.out.println("The parameters of the app are:");
@@ -72,7 +70,7 @@ public class Main {
 		System.out.println("HTTP interface: " + http_interface);
 		System.out.println("Default message: " + default_message);
 		System.out.println("Message location: " + message_location);
-		
+
 		//We write the default message
 		writeDefaultMessage(default_message);
 
