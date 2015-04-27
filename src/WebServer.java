@@ -149,7 +149,7 @@ public class WebServer {
 						for(String param : request_cut){
 							if (param.startsWith("message")){
 								String block_message[] = param.split("=",2);
-								if (block_message.length == 2 && (!block_message[1].equals(""))){
+								if (block_message.length == 2){
 									message = java.net.URLDecoder.decode(block_message[1], "UTF-8");
 								} else {
 									false_form = true;
@@ -163,10 +163,14 @@ public class WebServer {
 						} else {
 							//We update the message
 							this.message = message;
-							//We create the wav file
+							//We create the wav file if the message is not empty
+							String response;
+							if (!(message.equals(""))) {
 							FreeTTS freetts = new FreeTTS(message);
-							String response = freetts.writeMessage(this.message_location);
-							
+							response = freetts.writeMessage(this.message_location);
+							} else {
+								response = "OK";
+							}
 							System.out.println("The SIP message has been updated.");
 							System.out.println("New message: " + message);
 
@@ -249,6 +253,7 @@ public class WebServer {
 		poutput.println("<head>");
 		poutput.println("<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />");
 		poutput.println("<link rel='icon' type='image/x-icon' href='favicon.ico' />");
+		poutput.println("<script src='perso.js'></script>");
 		poutput.println("<script src='jquery-1.11.2.js'></script>");
 		poutput.println("<link href='bootstrap.min.css' rel='stylesheet'>");
 		poutput.println("<script src='bootstrap.min.js'></script>");
@@ -258,6 +263,9 @@ public class WebServer {
 		poutput.println("<div class = 'container well'>");
 		poutput.println("<div class = 'panel panel-default'>");
 		poutput.println("<div class='panel-heading'>");
+		poutput.println("<div class='btn-group pull-right'>");
+		poutput.println("<button class='btn btn-warning btn-xs' style='display: inline-block;' onclick='reset_form();'>Reset</button>");
+		poutput.println("</div>");
 		poutput.println("<h4 class='panel-title'>Update the SIP message</h4>");
 		poutput.println("</div>");
 		poutput.println("<div class='panel-body'>");
@@ -266,8 +274,7 @@ public class WebServer {
 		poutput.println("<label class='col-lg-2 control-label' for='message'>Message</label>");
 		poutput.println("<div class='col-lg-10'>");
 		poutput.println("<textarea class='form-control' id='message' name='message' placeholder='Enter your message' type='text' rows='10'/>");
-		poutput.println(message);
-		poutput.println("</textarea>");
+		poutput.println(message + "</textarea>");
 		poutput.println("</div>");
 		poutput.println("</div>");
 		poutput.println("<hr>");

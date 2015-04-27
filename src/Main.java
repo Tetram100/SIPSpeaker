@@ -20,7 +20,7 @@ public class Main {
 		try {
 			readConf(fileName);
 		} catch (Exception e) {
-			System.out.println("Can't read the default value.");
+			System.out.println("Can't read the default val.");
 		}
 		//We try to read the arguments
 		try {
