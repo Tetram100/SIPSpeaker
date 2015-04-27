@@ -143,9 +143,11 @@ public class ThreadSIPServer extends Thread {
 			// If the request starts with INVITE, we check if it has already been answered thanks to the Call-ID.
 			if (request.startsWith("INVITE")) {
 				String first_line_res = request.split("\r\n")[0];
-
+				String user_called = first_line_res.split("[ @:]")[2];
 				// Check if the caller calls the correct user. If not, send an Error 404.
-				if (first_line_res.contains(this.sipUser)) {
+				
+				
+				if (user_called.equals(this.sipUser)) {
 					String[] string_request = request.split("[ \n]");
 					int k = 0;
 					String callID = "";
