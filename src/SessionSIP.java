@@ -17,10 +17,10 @@ public class SessionSIP {
 	SessionAudio session_RTP;
 	boolean hangup;
 	String message_location;
+	boolean empty_content;
 
-	public SessionSIP(String sip_user, String request, DatagramSocket socket,
-			InetAddress addr_socket, int port_socket, InetAddress addr_caller,
-			int port_caller, int rtp_port, String message_location) {
+	public SessionSIP(String sip_user, String request, DatagramSocket socket, InetAddress addr_socket, int port_socket, InetAddress addr_caller, int port_caller, int rtp_port, String message_location, boolean empty_content) {
+		
 		this.sip_user = sip_user;
 		this.socket = socket;
 		this.request = request;
@@ -31,6 +31,7 @@ public class SessionSIP {
 		this.rtp_port = rtp_port;
 		this.hangup = false;
 		this.message_location = message_location;
+		this.empty_content = empty_content;
 	}
 
 	public boolean start() {
@@ -90,9 +91,14 @@ public class SessionSIP {
 		
 		// write the 100 trying response and convert the response in
 		// byte[].
-		String trying = new String("SIP/2.0 100 Trying\r\n" + via + "\r\n" + from + "\r\n"
-				+ to + "\r\n" + "Call-ID: " + callID + "\r\n" + "Cseq: " + numb
-				+ " INVITE" + "\r\n" + "Content-Length: 0\r\n\r\n");
+		String trying = new String("SIP/2.0 100 Trying\r\n" 
+				+ via + "\r\n" 
+				+ from + "\r\n"
+				+ to + "\r\n" 
+				+ "Call-ID: " + callID + "\r\n" 
+				+ "Cseq: " + numb + " INVITE" + "\r\n" 
+				+ "Content-Length: 0\r\n" 
+				+ "\r\n");
 
 		byte[] btrying = trying.getBytes();
 
@@ -118,41 +124,31 @@ public class SessionSIP {
 		// added after.
 		String ok = new String(
 				"SIP/2.0 200 OK\r\n"
-						+ via
-						+ "\r\n"
-						+ from
-						+ "\r\n"
-						+ to
-						+ "\r\nCall-ID: "
-						+ callID
-						+ "\r\nCSeq: "
-						+ numb
-						+ " INVITE\r\n"
+						+ via + "\r\n"
+						+ from + "\r\n"
+						+ to + "\r\n" 
+						+ "Call-ID: " + callID+ "\r\n" 
+						+ "CSeq: " + numb + " INVITE\r\n"
 						+ "User-Agent: pipophone\r\n"
 						+ "Supported: outboud\r\n"
 						+ "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY, INFO\r\n"
-						+ "Contact: <sip:" + this.sip_user + "@"
-						+ this.addr_socket.getHostAddress() + ":"
-						+ Integer.toString(this.port_socket) + ">\r\n"
+						+ "Contact: <sip:" + this.sip_user + "@" + this.addr_socket.getHostAddress() + ":" + Integer.toString(this.port_socket) + ">\r\n"
 						+ "Content-Type: application/sdp\r\n");
 
 		// SDP header + calculation of its length.
 		String sdp = new String(
 				"v=0\r\n"
-						+ "o=georges 4535 4535 IN IP4 "
-						+ this.addr_socket.getHostAddress()
-						+ "\r\n"
+						+ "o=georges 4535 4535 IN IP4 " + this.addr_socket.getHostAddress() + "\r\n"
 						+ "s=messageAuto\r\n"
 						+ "c=IN IP4 "+addr_socket.getHostAddress()+"\r\n"
 						+ "t=0 0\r\n"
 						+ "a=rtcp-xr:rcvr-rtt=all:10000 stat-sumary=loss,dup,jitt,TTL voip-metrics\r\n"
-						+ "m=audio "+this.rtp_port+" RTP/AVP 0 101\r\n"
+						+ "m=audio " + Integer.toString(this.rtp_port + 2) + " RTP/AVP 0 101\r\n"
 						+ "a=rtpmap:101 telephone-event/8000\r\n"
 		);
 
 		// Making of the OK message and conversion in byte[].
-		ok = ok + "Content-Length: " + String.valueOf(sdp.length()) + "\r\n\r\n"
-				+ sdp;
+		ok = ok + "Content-Length: " + String.valueOf(sdp.length()) + "\r\n\r\n" + sdp;
 
 		byte[] bok = ok.getBytes();
 
@@ -168,33 +164,35 @@ public class SessionSIP {
 		}
 		
 		// Creation and sending of the SessionAudio that will send the RTP
-		// messages.
-		this.session_RTP = new SessionAudio(this.rtp_port, this.addr_socket,
-				port_rtp_caller, this.addr_caller.getHostAddress(),
-				message_location + ".wav");
+		// messages. We first test if the message is not empty.
+		if(!this.empty_content){
+			
+			this.session_RTP = new SessionAudio(this.rtp_port, this.addr_socket, port_rtp_caller, this.addr_caller.getHostAddress(), message_location + ".wav");
 
-		try {
-			this.session_RTP.sendFile();
-		} catch (Exception e1) {
-			System.out.println("Problem while launching the method sendFIle of a SessionAUdio: " + e1);
+			try {
+				this.session_RTP.sendFile();
+			} catch (Exception e1) {
+				System.out.println("Problem while launching the method sendFIle of a SessionAUdio: " + e1);
+			}
 		}
+		
 
 		if (!this.hangup){
 			String bye = new String("BYE sip:" + id_caller + " SIP/2.0\r\n"
-					+ "Via: SIP/2.0/UDP " + this.addr_socket.getHostAddress() + ":"
-					+ Integer.toString(this.port_socket) + ";rport;branc=z9hG4bk"
-					+ SessionSIP.generateTag() + "\r\n" + "From: " + socket_id + ";tag="
-					+ tag + "\r\n" + "To: " + caller_id + "\r\n" + "Call-ID: " + callID
-					+ "\r\n" + "Cseq: 21 BYE\r\n" + "Contact: \"Thomas\" <sip:"
-					+ this.addr_socket.getHostAddress() + ":"
-					+ Integer.toString(this.port_socket) + ">\r\n"
-					+ "Max-Forwards: 70\r\n" + "Content-Length: 0\r\n" + "\r\n");
+					+ "Via: SIP/2.0/UDP " + this.addr_socket.getHostAddress() + ":" + Integer.toString(this.port_socket) + ";rport;branc=z9hG4bk" + SessionSIP.generateTag() + "\r\n"
+					+ "From: " + socket_id + ";tag=" + tag + "\r\n" 
+					+ "To: " + caller_id + "\r\n" 
+					+ "Call-ID: " + callID + "\r\n" 
+					+ "Cseq: 21 BYE\r\n" 
+					+ "Contact: <sip:" + this.addr_socket.getHostAddress() + ":" + Integer.toString(this.port_socket) + ">\r\n"
+					+ "Max-Forwards: 70\r\n" 
+					+ "Content-Length: 0\r\n" 
+					+ "\r\n");
 
 			byte[] bbye = bye.getBytes();
 
 			// send the BYE request to the client at "addr_caller" and "port_caller"
-			packet = new DatagramPacket(bbye, bbye.length, this.addr_caller,
-					this.port_caller);
+			packet = new DatagramPacket(bbye, bbye.length, this.addr_caller, this.port_caller);
 
 			try {
 				this.socket.send(packet);
@@ -209,6 +207,7 @@ public class SessionSIP {
 
 	// generate a string with the UUID library to get tags for SIP
 	public static String generateTag() {
+		
 		UUID tagUUID = UUID.randomUUID();
 		String tagString = tagUUID.toString();
 		String[] tagStringArray = tagString.split("-");

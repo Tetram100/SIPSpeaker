@@ -16,24 +16,24 @@ public class ThreadSIPServer extends Thread {
 	public String messageLocation;
 	public Vector<Integer> rtpPort_SIP_sessions;
 	public HashMap<String,ThreadSIPSession> sessions;
+	public String message_content;
 
 	public DatagramSocket socket = null;
 
-	public ThreadSIPServer(int port, String addrSIP, String sipUser,
-			String messageLocation) {
+	public ThreadSIPServer(int port, String addrSIP, String sipUser, String messageLocation, String message_content) {
+		
 		this.port = port;
 		this.sipUser = sipUser;
 		this.messageLocation = messageLocation;
 		this.sAdd = addrSIP;
 		this.sessions = new HashMap<String,ThreadSIPSession>();
 		this.rtpPort_SIP_sessions = new Vector<Integer>(1);
+		this.message_content = message_content;
 
 		try {
 			this.addr = InetAddress.getByName(this.sAdd);
 		} catch (UnknownHostException e) {
-			System.out
-					.println("Error while getting the datagram socket's address: "
-							+ e);
+			System.out.println("Error while getting the datagram socket's address: " + e);
 			return;
 		}
 
@@ -42,8 +42,7 @@ public class ThreadSIPServer extends Thread {
 		try {
 			this.socket = new DatagramSocket(this.port, this.addr);
 		} catch (IOException e) {
-			System.out.println("Error while launching the datagram socket: "
-					+ e);
+			System.out.println("Error while launching the datagram socket: " + e);
 			return;
 		}
 	}
@@ -51,7 +50,7 @@ public class ThreadSIPServer extends Thread {
 	public void run() {
 		while (true) {
 
-			// If the buf size is too short, the request is cut.
+			// If the buf size is too short, the request could be cut.
 			byte[] buf = new byte[2048];
 			// To generate RTP port.
 			Random rand = new Random();
@@ -76,6 +75,7 @@ public class ThreadSIPServer extends Thread {
 
 			// If the request begins with BYE, we check if it corresponds to one of our calls with the Call-ID. If so, we call the method client_hangup().
 			if (request.startsWith("BYE")){
+				
 				String[] string_request = request.split("[ \r\n]");
 				int k = 0;
 				String callID = "";
@@ -114,7 +114,7 @@ public class ThreadSIPServer extends Thread {
 						}
 					}
 					
-					// TODO tester champs (de même que pour toutes les autres messages à envoyer.
+					// TODO tester champs (de même que pour toutes les autres messages à envoyer).
 					String ack_bye = "SIP/2.0 200 OK\r\n";
 					ack_bye += Via + "\r\n";
 					ack_bye += From + "\r\n";
@@ -126,8 +126,7 @@ public class ThreadSIPServer extends Thread {
 					
 					byte[] back_bye = ack_bye.getBytes();
 					
-					packet = new DatagramPacket(back_bye, back_bye.length,
-							addr_dest, port_dest);
+					packet = new DatagramPacket(back_bye, back_bye.length, addr_dest, port_dest);
 					
 					try {
 						socket.send(packet);
@@ -142,13 +141,14 @@ public class ThreadSIPServer extends Thread {
 			
 			// If the request starts with INVITE, we check if it has already been answered thanks to the Call-ID.
 			if (request.startsWith("INVITE")) {
+				
 				String first_line_res = request.split("\r\n")[0];
 				String user_called = first_line_res.split("[ @:]")[2];
+
 				// Check if the caller calls the correct user. If not, send an Error 404.
-				
-				
 				if (user_called.equals(this.sipUser)) {
-					String[] string_request = request.split("[ \n]");
+					
+					String[] string_request = request.split("[ \r\n]");
 					int k = 0;
 					String callID = "";
 					for (String part : string_request) {
@@ -174,9 +174,26 @@ public class ThreadSIPServer extends Thread {
 							rtpPort_SIP_sessions.addElement(rtpPort);
 						}
 
-						ThreadSIPSession thread_SIP = new ThreadSIPSession(this.socket, request, rtpPort,
-								this, this.sipUser, this.addr, this.port,
-								addr_dest, port_dest, callID, this.messageLocation);
+						InetAddress receiving_add = this.addr;
+						
+						if(sAdd.equals("0.0.0.0")){
+							String[] split_req = request.split("\r\n");
+							for (String part : split_req){
+								if(part.startsWith("To:")){
+									String s_receiving_add = part.split("[:@]")[3];
+									
+									try {
+										receiving_add = InetAddress.getByName(s_receiving_add);
+									} catch (UnknownHostException e) {
+										System.out.println("Error while getting the call receiving's address: " + e);
+										receiving_add = this.addr;
+									}
+									
+								}
+							}
+						}
+						
+						ThreadSIPSession thread_SIP = new ThreadSIPSession(this.socket, request, rtpPort, this, this.sipUser, receiving_add, this.port, addr_dest, port_dest, callID, this.messageLocation, this.message_content.equals(""));
 						
 						synchronized (this.sessions) {
 							this.sessions.put(callID,thread_SIP);
@@ -189,16 +206,6 @@ public class ThreadSIPServer extends Thread {
 									.println("Error while launching the SIP session thread: "
 											+ e);
 						}
-
-						// Create the SIP session and start the sending (Trying
-						// + OK + RTP + BYE).
-						/*
-						 * SessionSIP sess = new SessionSIP(this.sipUser,
-						 * request, socket, this.addr, this.port, addr_dest,
-						 * port_dest); if (sess.start()) {
-						 * System.out.println("Sending ok."); } else {
-						 * System.out.println("Problem while sending."); }
-						 */
 					}
 					else {
 						// The INVITE has already been answered. We reset the request string.
@@ -234,6 +241,17 @@ public class ThreadSIPServer extends Thread {
 						}
 					}
 					
+					String string_add = this.sAdd;
+					
+					if(sAdd.equals("0.0.0.0")){
+						String[] split_req = request.split("\r\n");
+						for (String part : split_req){
+							if(part.startsWith("To:")){
+								string_add = part.split("[:@]")[3];
+							}
+						}
+					}
+					
 					String not_found = "SIP/2.0 404 Not Found\r\n";
 					not_found += Via + "\r\n";
 					not_found += From + "\r\n";
@@ -241,14 +259,13 @@ public class ThreadSIPServer extends Thread {
 					not_found += Call_ID + "\r\n";
 					not_found += CSeq + "\r\n";
 					not_found += "Allow: INVITE, ACK, CANCEL, OPTIONS, BYE, REFER, SUBSCRIBE, NOTIFY\r\n";
-					not_found += "Contact: <" + this.sipUser + "@" + this.sAdd +":"+ this.port + ">\r\n";
+					not_found += "Contact: <" + this.sipUser + "@" + string_add +":"+ this.port + ">\r\n";
 					not_found += "Content-Length: 0\r\n";
 					not_found += "\r\n";
 					
 					byte[] bnot_found = not_found.getBytes();
 					
-					packet = new DatagramPacket(bnot_found, bnot_found.length,
-							addr_dest, port_dest);
+					packet = new DatagramPacket(bnot_found, bnot_found.length, addr_dest, port_dest);
 					
 					try {
 						socket.send(packet);

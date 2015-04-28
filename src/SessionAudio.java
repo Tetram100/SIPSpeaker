@@ -22,17 +22,21 @@ public class SessionAudio implements RTPAppIntf {
 	public final int buffer_size = 1024;
 	public Participant receiver;
 	public boolean end;
+	public boolean part_add = false;
 	
 	// The address of the sender and of the receiver are of different types.
 	public SessionAudio(int port_sender, InetAddress add_sender, int port_receiver, String add_receiver, String message_path){
 		
 		this.message_path = message_path;
 		
+		this.end = false;
+		
 		// creation of the RTP session.
 		try {
+			
 			System.out.println("Port sender: " + port_sender);
 			DatagramSocket rtpSocket = new DatagramSocket(port_sender, add_sender);
-			DatagramSocket rtcpSocket = new DatagramSocket(port_sender + 1, add_sender);
+			DatagramSocket rtcpSocket = new DatagramSocket(port_sender+1, add_sender);
 			this.rtp_session = new RTPSession(rtpSocket, rtcpSocket);
 			
 			this.rtp_session.RTPSessionRegister(this,null, null);
@@ -43,17 +47,22 @@ public class SessionAudio implements RTPAppIntf {
 		}
 		
 		try {
+			TimeUnit.MILLISECONDS.sleep(300);
+		} catch (InterruptedException e) {
+			System.out.println("Problem while sleeping: " + e);
+		}
+		
+		try {
 			this.receiver = new Participant(add_receiver, port_receiver, port_receiver + 1);
-			this.rtp_session.addParticipant(this.receiver);
+			this.rtp_session.addParticipant(this.receiver);			
 		} catch (Exception e) {
 			System.out.println("Problem while adding a participant: " + e);
+			e.printStackTrace();
 			return;
 		}
 		
-		this.end = false;
-		
 		try {
-			TimeUnit.SECONDS.sleep(2);
+			TimeUnit.MILLISECONDS.sleep(2);
 		} catch (InterruptedException e) {
 			System.out.println("Problem while sleeping: " + e);
 		}
@@ -77,7 +86,7 @@ public class SessionAudio implements RTPAppIntf {
 		
 	}
 	
-	public void sendFile(){
+	public void sendFile() {
 		File audioFile = new File(this.message_path);
 		if (!audioFile.exists()) {
 			System.err.println("Wav file " + this.message_path + " doesn't exist.");
@@ -99,42 +108,50 @@ public class SessionAudio implements RTPAppIntf {
 		int nBytesRead = 0;
 		byte[] data_to_send = new byte[buffer_size];
 		
-		
-		try {
-			while (nBytesRead != -1 && !end) {
-				
-				nBytesRead = audio_input_stream.read(data_to_send, 0, data_to_send.length);
-				
-				if (nBytesRead >= 0) {
+		if(true){
+			try {
+				while ((nBytesRead != -1) && (!end)) {
 					
-					try {
-						TimeUnit.MILLISECONDS.sleep(130);
-					} catch (InterruptedException e) {
-						System.out.println("Problem while sleeping: " + e);
+					nBytesRead = audio_input_stream.read(data_to_send, 0, data_to_send.length);
+					
+					if (nBytesRead >= 0) {
+						
+						try {
+							TimeUnit.MILLISECONDS.sleep(130);
+						} catch (InterruptedException e) {
+							System.out.println("Problem while sleeping: " + e);
+						}
+						
+						this.rtp_session.sendData(data_to_send);
+						
 					}
 					
-					this.rtp_session.sendData(data_to_send);
-					
 				}
-				
+			} catch (IOException e) {
+				System.out.println("Problem while sending the audio: " + e);
+				return;
 			}
-		} catch (IOException e) {
-			System.out.println("Problem while sending the audio: " + e);
-			return;
 		}
 		
-		if (!end){
-			try {
-				TimeUnit.SECONDS.sleep(5);
-			} catch (InterruptedException e) {
-				System.out.println("Problem while sleeping: " + e);
-			}
+		try {
+			TimeUnit.MILLISECONDS.sleep(300);
+		} catch (InterruptedException e) {
+			System.out.println("Problem while sleeping: " + e);
 		}
+		
 		
 		try {
 			this.rtp_session.endSession();
 		} catch (Exception e) {
 			System.out.println("Problem while ending the RTP session: " + e);
+		}
+		
+		if (!end){
+			try {
+				TimeUnit.SECONDS.sleep(2);
+			} catch (InterruptedException e) {
+				System.out.println("Problem while sleeping: " + e);
+			}
 		}
 	}
 	
