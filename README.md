@@ -21,6 +21,7 @@ Juste write " java -jar SIP.jar [-c config_file_name] [-user sip_uri] [-http htt
 * -c config_file_name specifies the configuration file. The file name can include a relative or absolute path.
 * -user sip_uri indicates what address the SIP server should listen to, for example robot@127.0.0.1:5064.
 * -http http_bind_address specifies the address and port number where the web server listens for incoming connections. Example: "127.0.0.1:8080", or only port number "8080", or only address/name: "myserver.mydomain.se".
+
 The jar file must be launch in the same folder as the lib folder and the Web folder in order to have access to these resources otherwise it won't work.
 You might want to run the program as a root user depending on the port you want to use.
 

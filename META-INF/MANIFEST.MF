@@ -1,4 +1,7 @@
 Manifest-Version: 1.0
-Class-Path: . 
+Class-Path: . lib/cmu_us_kal.jar lib/cmu_time_awb.jar lib/
+ mbrola.jar lib/jlibrtp-20100223.012658-1.jar lib/freetts-jsap
+ i10.jar lib/en_us.jar lib/cmudict04.jar lib/cmutimelex.ja
+ r lib/freetts.jar lib/cmulex.jar
 Main-Class: Main
 

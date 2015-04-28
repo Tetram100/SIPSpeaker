@@ -141,6 +141,7 @@ public class ThreadSIPServer extends Thread {
 			
 			// If the request starts with INVITE, we check if it has already been answered thanks to the Call-ID.
 			if (request.startsWith("INVITE")) {
+				System.out.println("message:" + message_content);
 				
 				String first_line_res = request.split("\r\n")[0];
 				String user_called = first_line_res.split("[ @:]")[2];

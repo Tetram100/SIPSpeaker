@@ -73,7 +73,7 @@ public class Main {
 
 		//We write the default message
 		writeDefaultMessage(default_message);
-
+		
 		Thread web_server = new ThreadWeb(default_message, message_location, http_port);
 		web_server.start();
 

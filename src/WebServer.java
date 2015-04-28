@@ -150,7 +150,7 @@ public class WebServer {
 							if (param.startsWith("message")){
 								String block_message[] = param.split("=",2);
 								if (block_message.length == 2){
-									message = java.net.URLDecoder.decode(block_message[1], "UTF-8");
+									message = java.net.URLDecoder.decode(block_message[1], "UTF-8").trim();
 								} else {
 									false_form = true;
 								}
