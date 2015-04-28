@@ -16,7 +16,8 @@ public class ThreadSIPServer extends Thread {
 	public String messageLocation;
 	public Vector<Integer> rtpPort_SIP_sessions;
 	public HashMap<String,ThreadSIPSession> sessions;
-	public String message_content;
+	public static String message_content = "";
+	public boolean empty;
 
 	public DatagramSocket socket = null;
 
@@ -28,7 +29,11 @@ public class ThreadSIPServer extends Thread {
 		this.sAdd = addrSIP;
 		this.sessions = new HashMap<String,ThreadSIPSession>();
 		this.rtpPort_SIP_sessions = new Vector<Integer>(1);
-		this.message_content = message_content;
+		
+		synchronized(ThreadSIPServer.message_content){
+			ThreadSIPServer.message_content = message_content;
+			this.empty = ThreadSIPServer.message_content.equals("");
+		}
 
 		try {
 			this.addr = InetAddress.getByName(this.sAdd);
@@ -194,7 +199,11 @@ public class ThreadSIPServer extends Thread {
 							}
 						}
 						
-						ThreadSIPSession thread_SIP = new ThreadSIPSession(this.socket, request, rtpPort, this, this.sipUser, receiving_add, this.port, addr_dest, port_dest, callID, this.messageLocation, this.message_content.equals(""));
+						synchronized(ThreadSIPServer.message_content){
+							this.empty = ThreadSIPServer.message_content.equals("");
+						}
+						
+						ThreadSIPSession thread_SIP = new ThreadSIPSession(this.socket, request, rtpPort, this, this.sipUser, receiving_add, this.port, addr_dest, port_dest, callID, this.messageLocation, this.empty);
 						
 						synchronized (this.sessions) {
 							this.sessions.put(callID,thread_SIP);

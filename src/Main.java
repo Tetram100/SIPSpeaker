@@ -22,6 +22,7 @@ public class Main {
 		} catch (Exception e) {
 			System.out.println("Can't read the default val.");
 		}
+		
 		//We try to read the arguments
 		try {
 			//We read the input from the command line interface

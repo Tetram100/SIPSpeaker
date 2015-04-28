@@ -75,6 +75,14 @@ public class ThreadSIPSession extends Thread {
 			System.out.println("Problem while sleeping in the SIP session: " + e);
 		}
 		
+		synchronized(this.server.sessions){
+			this.server.sessions.remove(this.call_ID);
+		}
+		
+		synchronized(this.server.rtpPort_SIP_sessions){
+			this.server.rtpPort_SIP_sessions.removeElement(this.rtp_port);
+		}
+		
 		this.interrupt();
 	}
 }

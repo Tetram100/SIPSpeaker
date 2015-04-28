@@ -163,12 +163,18 @@ public class WebServer {
 						} else {
 							//We update the message
 							this.message = message;
-							//We create the wav file if the message is not empty
+							//We create the WAVE file if the message is not empty
 							String response;
 							if (!(message.equals(""))) {
-							FreeTTS freetts = new FreeTTS(message);
-							response = freetts.writeMessage(this.message_location);
+								synchronized(ThreadSIPServer.message_content){
+									ThreadSIPServer.message_content = message;
+								}
+								FreeTTS freetts = new FreeTTS(message);
+								response = freetts.writeMessage(this.message_location);
 							} else {
+								synchronized(ThreadSIPServer.message_content){
+									ThreadSIPServer.message_content = "";
+								}
 								response = "OK";
 							}
 							System.out.println("The SIP message has been updated.");

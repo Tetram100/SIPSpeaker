@@ -3,6 +3,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 public class SessionSIP {
 
@@ -173,6 +174,14 @@ public class SessionSIP {
 				this.session_RTP.sendFile();
 			} catch (Exception e1) {
 				System.out.println("Problem while launching the method sendFIle of a SessionAUdio: " + e1);
+			}
+		}
+		else{
+			System.out.println("The message to read is empty. Instead, I will wait a few seconds and close the call.");
+			try {
+				TimeUnit.SECONDS.sleep(3);
+			} catch (InterruptedException e) {
+				System.out.println("Problem while sleeping (message empty): " + e);
 			}
 		}
 		
